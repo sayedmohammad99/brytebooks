@@ -35,7 +35,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr id="default-row">
+      <tr>
         <td><input type="text"></td>
         <td><input type="text"></td>
         <td><input type="number" oninput="calculateAmount(this)"></td>
@@ -47,6 +47,7 @@
   </table>
   <button onclick="addRow()">Add new invoice item</button>
   <button onclick="toggleNotes()">Add notes</button>
+  <button onclick="downloadPDF()" class="no-print">Download</button>
 
   <div id="notes-section" class="hidden">
     <br><br>
@@ -61,21 +62,7 @@
 
     <br><br>
     <label for="sales-tax-percentage">Sales Tax Percentage:</label>
-    <input type="number" id="sales-tax-percentage" oninput="calculateTotal()">
-
-    <br><br>
-    <label for="shipping">Shipping:</label>
-    <input type="number" id="shipping" oninput="calculateTotal()">
-
-    <br><br>
-    <label for="total">Total:</label>
-    <input type="number" id="total" readonly>
-
-    <br><br>
-    <a href="#" onclick="downloadPDF()" class="no-print">Download</a>
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <input type="number" id="sales-tax-percentage" ... src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
   <script>
     function addRow() {
       var table = document.getElementById("invoice-table");
@@ -86,7 +73,6 @@
       var cell4 = row.insertCell(3);
       var cell5 = row.insertCell(4);
       var cell6 = row.insertCell(5);
-
       cell1.innerHTML = "<input type='text'>";
       cell2.innerHTML = "<input type='text'>";
       cell3.innerHTML = "<input type='number' oninput='calculateAmount(this)'>";
@@ -98,31 +84,17 @@
       calculateTotal();
     }
 
-    function deleteRow(btn) {
-      var row = btn.parentNode.parentNode;
-      row.parentNode.removeChild(row);
-      calculateSubtotal();
-      calculateTotal();
-    }
-
-    function calculateAmount(input) {
-      var row = input.parentNode.parentNode;
-      var quantity = parseFloat(row.getElementsByTagName("input")[2].value);
-      var rate = parseFloat(row.getElementsByTagName("input")[3].value);
-      var amount = quantity * rate;
-      row.getElementsByTagName("input")[4].value = isNaN(amount) ? "" : amount.toFixed(2);
-      calculateSubtotal();
-      calculateTotal();
-    }
-
     function calculateSubtotal() {
       var table = document.getElementById("invoice-table");
       var rows = table.getElementsByTagName("tr");
       var subtotal = 0;
 
       for (var i = 1; i < rows.length; i++) {
-        var amount = parseFloat(rows[i].getElementsByTagName("input")[4].value);
-        subtotal += isNaN(amount) ? 0 : amount;
+        var quantity = parseFloat(rows[i].getElementsByTagName("input")[2].value);
+        var rate = parseFloat(rows[i].getElementsByTagName("input")[3].value);
+        var amount = quantity * rate;
+        rows[i].getElementsByTagName("input")[4].value = isNaN(amount) ? "" : amount.toFixed(2);
+        subtotal += amount;
       }
 
       document.getElementById("subtotal").value = subtotal.toFixed(2);
@@ -131,15 +103,21 @@
     function calculateTotal() {
       var subtotal = parseFloat(document.getElementById("subtotal").value);
       var salesTaxPercentage = parseFloat(document.getElementById("sales-tax-percentage").value);
-      var shipping = parseFloat(document.getElementById("shipping").value);
-      var salesTaxAmount = (subtotal * salesTaxPercentage) / 100;
-      var total = subtotal + salesTaxAmount + shipping;
+      var salesTax = (subtotal * salesTaxPercentage) / 100;
+      var total = subtotal + salesTax;
       document.getElementById("total").value = total.toFixed(2);
+    }
+
+    function deleteRow(button) {
+      var row = button.parentNode.parentNode;
+      row.parentNode.removeChild(row);
+      calculateSubtotal();
+      calculateTotal();
     }
 
     function toggleNotes() {
       var notesSection = document.getElementById("notes-section");
-      var notesButton = document.querySelector("button");
+      var notesButton = document.getElementById("notes-button");
       if (notesSection.classList.contains("hidden")) {
         notesSection.classList.remove("hidden");
         notesButton.textContent = "Hide notes";
